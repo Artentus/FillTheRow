@@ -236,7 +236,10 @@ namespace FillTheRow
                     if (leftDownMilliseconds > 80)
                     {
                         if (currentTetromino.TryMoveLeft())
+                        {
+                            locking = false;
                             lockMilliseconds = 0;
+                        }
                     }
                     else
                         leftDownMilliseconds += elapsed.Milliseconds;
@@ -246,7 +249,10 @@ namespace FillTheRow
                     if (rightDownMilliseconds > 80)
                     {
                         if (currentTetromino.TryMoveRight())
+                        {
+                            locking = false;
                             lockMilliseconds = 0;
+                        }
                     }
                     else
                         rightDownMilliseconds += elapsed.Milliseconds;
@@ -273,7 +279,10 @@ namespace FillTheRow
                 if (!currentTetromino.TryMoveDown())
                     locking = true;
                 else
+                {
+                    locking = false;
                     lockMilliseconds = 0;
+                }
             }
 
             if (locking)
@@ -315,7 +324,10 @@ namespace FillTheRow
                 {
                     leftDown = true;
                     if (!(lost || paused) && currentTetromino.TryMoveLeft())
+                    {
+                        locking = false;
                         lockMilliseconds = 0;
+                    }
                 }
             }
             else
@@ -333,7 +345,10 @@ namespace FillTheRow
                 {
                     rightDown = true;
                     if (!(lost || paused) && currentTetromino.TryMoveRight())
+                    {
+                        locking = false;
                         lockMilliseconds = 0;
+                    }
                 }
             }
             else
@@ -352,7 +367,7 @@ namespace FillTheRow
                     downDown = true;
                     if (!(lost || paused) && currentTetromino.TryMoveDown())
                     {
-                        lockMilliseconds = 0;
+                        locking = false;
                         score += 10;
                     }
                 }
@@ -368,7 +383,10 @@ namespace FillTheRow
                 {
                     rotateLeftDown = true;
                     if (!(lost || paused) && currentTetromino.TryRotateLeft())
+                    {
+                        locking = false;
                         lockMilliseconds = 0;
+                    }
                 }
             }
             else
@@ -382,7 +400,10 @@ namespace FillTheRow
                 {
                     rotateRightDown = true;
                     if (!(lost || paused) && currentTetromino.TryRotateRight())
+                    {
+                        locking = false;
                         lockMilliseconds = 0;
+                    }
                 }
             }
             else
@@ -514,7 +535,7 @@ namespace FillTheRow
                 comboCount++;
             else
                 comboCount = 0;
-            score += 50 * (comboCount - 1) * level;
+            if (comboCount > 1) score += 50 * (comboCount - 1) * level;
 
             filledRows += count;
             level = filledRows / 10 + 1;

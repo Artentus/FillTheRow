@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Artentus.GameUtils;
+using Artentus.GameUtils.Audio;
 using Artentus.GameUtils.Graphics;
 using Artentus.GameUtils.Input;
 using Artentus.GameUtils.Input.DefaultDevices;
@@ -13,11 +14,14 @@ namespace FillTheRow
 {
     public class PlayingField : IRenderable, IUpdateable, IInputListener<KeyboardState>
     {
-        readonly ListenerHandle<IInputListener<KeyboardState>> keyboardHandle;
+        readonly ListenerHandle<KeyboardState> keyboardHandle;
         readonly TetrominoManager manager;
         readonly Block[,] field;
         readonly SortedSet<int> generatedIds;
         readonly Queue<Tetromino> nextTetrominos;
+        readonly AudioHandle moveSound;
+        readonly AudioHandle rotateSound;
+        readonly AudioHandle lockSound;
         long score;
         int level;
         int comboCount;
@@ -69,13 +73,22 @@ namespace FillTheRow
         public PlayingField(TetrominoManager manager)
         {
             this.manager = manager;
-            keyboardHandle = Game.Keyboard.RegisterListener(this);
+            keyboardHandle = Game.Loop.Components.GetSingle<IInputProvider<KeyboardState>>().RegisterListener(this);
             field = new Block[10, 20];
             generatedIds = new SortedSet<int>();
             nextTetrominos = new Queue<Tetromino>(5);
             for (int i = 0; i < 5; i++)
                 nextTetrominos.Enqueue(this.NextTetromino());
             holdTetromino = this.NextTetromino();
+
+            AudioEngine audioEngine = Game.Loop.Components.GetSingle<AudioEngine>();
+            moveSound = audioEngine.CreateHandle(Path.Combine(Environment.CurrentDirectory, "Sounds/move.wav"));
+            moveSound.Volume = 0.5f;
+            rotateSound = audioEngine.CreateHandle(Path.Combine(Environment.CurrentDirectory, "Sounds/rotate.wav"));
+            rotateSound.Volume = 0.5f;
+            lockSound = audioEngine.CreateHandle(Path.Combine(Environment.CurrentDirectory, "Sounds/lock.wav"));
+            lockSound.Volume = 0.5f;
+
             level = 1;
             canChange = true;
         }
@@ -103,7 +116,7 @@ namespace FillTheRow
                 int id;
                 do
                 {
-                    id = Game.Random.Next(manager.Identifiers.Length);
+                    id = Game.Loop.Components.GetSingle<XorshiftEngine>().Next(manager.Identifiers.Length);
                 } while (generatedIds.Contains(id));
                 generatedIds.Add(id);
                 return id;
@@ -237,6 +250,7 @@ namespace FillTheRow
                     {
                         if (currentTetromino.TryMoveLeft())
                         {
+                            moveSound.Play();
                             locking = false;
                             lockMilliseconds = 0;
                         }
@@ -250,6 +264,7 @@ namespace FillTheRow
                     {
                         if (currentTetromino.TryMoveRight())
                         {
+                            moveSound.Play();
                             locking = false;
                             lockMilliseconds = 0;
                         }
@@ -259,10 +274,9 @@ namespace FillTheRow
                 }
                 if (downDown)
                 {
-                    if (!currentTetromino.TryMoveDown())
-                        locking = true;
-                    else
+                    if (currentTetromino.TryMoveDown())
                     {
+                        moveSound.Play();
                         lockMilliseconds = 0;
                         score += 10;
                     }
@@ -306,7 +320,7 @@ namespace FillTheRow
             if (currentTetromino == null)
             {
                 currentTetromino = nextTetrominos.Dequeue();
-                Game.MainGameLayer.Components.Add(currentTetromino);
+                Game.Loop.Components.GetSingle<GameLayer>().Components.Add(currentTetromino);
                 nextTetrominos.Enqueue(this.NextTetromino());
                 canChange = true;
             }
@@ -325,6 +339,7 @@ namespace FillTheRow
                     leftDown = true;
                     if (!(lost || paused) && currentTetromino.TryMoveLeft())
                     {
+                        moveSound.Play();
                         locking = false;
                         lockMilliseconds = 0;
                     }
@@ -346,6 +361,7 @@ namespace FillTheRow
                     rightDown = true;
                     if (!(lost || paused) && currentTetromino.TryMoveRight())
                     {
+                        moveSound.Play();
                         locking = false;
                         lockMilliseconds = 0;
                     }
@@ -367,6 +383,7 @@ namespace FillTheRow
                     downDown = true;
                     if (!(lost || paused) && currentTetromino.TryMoveDown())
                     {
+                        moveSound.Play();
                         locking = false;
                         score += 10;
                     }
@@ -384,6 +401,7 @@ namespace FillTheRow
                     rotateLeftDown = true;
                     if (!(lost || paused) && currentTetromino.TryRotateLeft())
                     {
+                        rotateSound.Play();
                         locking = false;
                         lockMilliseconds = 0;
                     }
@@ -401,6 +419,7 @@ namespace FillTheRow
                     rotateRightDown = true;
                     if (!(lost || paused) && currentTetromino.TryRotateRight())
                     {
+                        rotateSound.Play();
                         locking = false;
                         lockMilliseconds = 0;
                     }
@@ -437,11 +456,11 @@ namespace FillTheRow
             {
                 canChange = false;
                 Tetromino temp = holdTetromino;
-                Game.MainGameLayer.Components.Remove(currentTetromino);
+                Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(currentTetromino);
                 holdTetromino = currentTetromino;
                 currentTetromino = temp;
                 currentTetromino.GoBackToStart();
-                Game.MainGameLayer.Components.Add(currentTetromino);
+                Game.Loop.Components.GetSingle<GameLayer>().Components.Add(currentTetromino);
             }
         }
 
@@ -474,6 +493,7 @@ namespace FillTheRow
 
         private void PlaceCurrent()
         {
+            GameLayer layer = Game.Loop.Components.GetSingle<GameLayer>();
             Block[] blocks = currentTetromino.ToBlocks();
             for (int i = 0; i < blocks.Length; i++)
             {
@@ -484,10 +504,11 @@ namespace FillTheRow
                     return;
                 }
                 field[block.Location.X, block.Location.Y] = block;
-                Game.MainGameLayer.Components.Add(block);
+                layer.Components.Add(block);
             }
-            Game.MainGameLayer.Components.Remove(currentTetromino);
+            layer.Components.Remove(currentTetromino);
             currentTetromino = null;
+            lockSound.Play();
         }
 
         private void ClearRows()
@@ -509,7 +530,7 @@ namespace FillTheRow
                 {
                     for (int x = 0; x < 10; x++)
                     {
-                        Game.MainGameLayer.Components.Remove(field[x, y]);
+                        Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(field[x, y]);
                         field[x, y] = null;
                     }
                     count++;
@@ -557,17 +578,20 @@ namespace FillTheRow
 
         protected virtual void Dispose(bool disposing)
         {
-            if (currentTetromino != null) Game.MainGameLayer.Components.Remove(currentTetromino);
+            if (currentTetromino != null) Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(currentTetromino);
             for (int x = 0; x < 10; x++)
             {
                 for (int y = 0; y < 20; y++)
                 {
                     if (field[x, y] != null)
-                        Game.MainGameLayer.Components.Remove(field[x, y]);
+                        Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(field[x, y]);
                 }
             }
 
             keyboardHandle.Dispose();
+            moveSound.Dispose();
+            rotateSound.Dispose();
+            lockSound.Dispose();
             this.DestroyResources();
         }
 

@@ -11,8 +11,6 @@ namespace FillTheRow.UI
         public HighscoreMenu(Menu parent)
             : base(parent)
         {
-            Game.UIRoot.Children.Add(this);
-
             var listBox = new ListBox();
             listBox.Location = new Vector2(0.2f, 0.15f);
             listBox.Size = new Vector2(0.6f, 0.6f);
@@ -39,7 +37,11 @@ namespace FillTheRow.UI
             backButton.Location = new Vector2(0.2f, 0.8f);
             backButton.Size = new Vector2(0.6f, 0.055f);
             backButton.Text = "Zurück";
-            backButton.MouseDown += (sender, e) => this.GoUp();
+            backButton.MouseDown += (sender, e) =>
+            {
+                this.GoUp();
+                Parent = null;
+            };
             Children.Add(backButton);
         }
     }

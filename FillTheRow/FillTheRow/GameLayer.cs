@@ -10,8 +10,8 @@ namespace FillTheRow
         {
             const float defaultWidth = 180;
             const float defaultHeight = 280;
-            float factor = Math.Min(Game.Window.ClientSize.Width / defaultWidth, Game.Window.ClientSize.Height / defaultHeight);
-            Matrix2x3 transform = Matrix2x3.Translation((Game.Window.ClientSize.Width - defaultWidth * factor) / 2, (Game.Window.ClientSize.Height - defaultHeight * factor) / 2) * Matrix2x3.Scaling(factor) * Matrix2x3.Translation(40, 60);
+            float factor = Math.Min(renderer.SurfaceBounds.Width / defaultWidth, renderer.SurfaceBounds.Height / defaultHeight);
+            Matrix2x3 transform = Matrix2x3.Translation((renderer.SurfaceBounds.Width - defaultWidth * factor) / 2, (renderer.SurfaceBounds.Height - defaultHeight * factor) / 2) * Matrix2x3.Scaling(factor) * Matrix2x3.Translation(40, 60);
             renderer.SetTransform(transform);
             base.Render(renderer);
             renderer.ResetTransform();

@@ -6,55 +6,53 @@ using Artentus.GameUtils.Input.DefaultDevices;
 using Artentus.GameUtils.Renderers.Direct2D;
 using Artentus.GameUtils.Renderers.Gdi;
 using Artentus.GameUtils.UI;
+using Artentus.GameUtils.Audio.CsCore;
 using MainMenu = FillTheRow.UI.MainMenu;
 
 namespace FillTheRow
 {
     static class Game
     {
-        public static XorshiftEngine Random;
-        public static GameWindow Window;
         public static GameLoop Loop;
-        public static Keyboard Keyboard;
-        public static Mouse Mouse;
-        public static UIRoot UIRoot;
-        public static GameLayer MainGameLayer;
-        public static TetrominoManager Manager;
 
         [STAThread]
         static void Main(string[] args)
         {
-            Random = new XorshiftEngine();
-            Window = new GameWindow(!(args.Contains("-windowed")));
-            Keyboard = new Keyboard();
-            Keyboard.Initialize(Window);
-            Mouse = new Mouse();
-            Mouse.Initialize(Window);
+            var window = new GameWindow(!(args.Contains("-windowed")));
             if (args.Contains("-gdi"))
-                Loop = new GameLoop(Renderer.Create<GdiRenderer>(Window));
+                Loop = GameLoop.CreateWithRenderer<GdiRenderer>(window);
             else
-                Loop = new GameLoop(Renderer.Create<Direct2DRenderer>(Window));
+                Loop = GameLoop.CreateWithRenderer<Direct2DRenderer>(window);
             Loop.TargetUpdatesPerSecond = 60;
-            MainGameLayer = new GameLayer();
-            Loop.Components.Add(MainGameLayer);
-            UIRoot = new UIRoot(Window, Keyboard, Mouse);
-            UIRoot.AspectRatio = 16.0f / 9.0f;
-            Loop.Components.Add(UIRoot);
-            UIRoot.Children.Add(new MainMenu());
-            Manager = new TetrominoManager();
-            Loop.Components.Add(Manager);
-            
-            Keyboard.BeginCapture();
-            Mouse.BeginCapture();
+
+            var keyboard = new Keyboard();
+            keyboard.Initialize(window);
+            Loop.Components.Add(keyboard);
+            var mouse = new Mouse();
+            mouse.Initialize(window);
+            Loop.Components.Add(mouse);
+
+            Loop.Components.Add(new CSCoreEngine());
+            Loop.Components.Add(new XorshiftEngine());
+            Loop.Components.Add(new GameLayer());
+            Loop.Components.Add(new TetrominoManager());
+
+            var uiRoot = new UIRoot(window, keyboard, mouse);
+            Loop.Components.Add(uiRoot);
+            uiRoot.AspectRatio = 16.0f / 9.0f;
+            uiRoot.Children.Add(new MainMenu());
+
+            keyboard.BeginCapture();
+            mouse.BeginCapture();
             Loop.Start();
 
             Application.ApplicationExit += (sender, e) =>
             {
-                Keyboard.EndCapture();
-                Mouse.EndCapture();
+                keyboard.EndCapture();
+                mouse.EndCapture();
                 Loop.Stop();
             };
-            Application.Run(Window);
+            Application.Run(window);
         }
     }
 }

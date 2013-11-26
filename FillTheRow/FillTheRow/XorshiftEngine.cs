@@ -1,10 +1,16 @@
 ﻿using System;
+using Artentus.GameUtils;
 
 namespace FillTheRow
 {
-    public class XorshiftEngine : Random
+    public class XorshiftEngine : Random, IGameComponent
     {
         uint x, y, z, w;
+
+        bool IGameComponent.IsSynchronized
+        {
+            get { return false; }
+        }
 
         public XorshiftEngine()
             : this(Environment.TickCount)
@@ -33,5 +39,8 @@ namespace FillTheRow
         {
             return (double)this.NextUInt() / (double)uint.MaxValue;
         }
+
+        void IDisposable.Dispose()
+        { }
     }
 }

@@ -33,8 +33,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CSCore, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\CSCore\CSCore.dll</HintPath>
+    </Reference>
     <Reference Include="GameUtils">
       <HintPath>..\..\GameUtils\GameUtils\bin\Release\GameUtils.dll</HintPath>
+    </Reference>
+    <Reference Include="GameUtils.Audio">
+      <HintPath>..\..\GameUtils\GameUtils.Audio\bin\Release\GameUtils.Audio.dll</HintPath>
     </Reference>
     <Reference Include="GameUtils.Input">
       <HintPath>..\..\GameUtils\GameUtils.Input\bin\Release\GameUtils.Input.dll</HintPath>

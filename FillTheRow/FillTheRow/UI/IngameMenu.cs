@@ -18,10 +18,9 @@ namespace FillTheRow.UI
         public IngameMenu(Menu parent)
             : base(parent)
         {
-            field = new PlayingField(Game.Manager);
-            Game.MainGameLayer.Components.Add(field);
+            field = new PlayingField(Game.Loop.Components.GetSingle<TetrominoManager>());
+            Game.Loop.Components.GetSingle<GameLayer>().Components.Add(field);
             CanGetFocus = true;
-            Game.UIRoot.Children.Add(this);
             locker = new object();
 
             continueButton = new Button();
@@ -39,10 +38,10 @@ namespace FillTheRow.UI
             exitButton.Visible = false;
             exitButton.MouseDown += (sender, e) =>
             {
-                Game.MainGameLayer.Components.Remove(field);
+                Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(field);
                 field.Dispose();
                 this.GoUp();
-                Game.UIRoot.Children.Remove(this);
+                Parent = null;
             };
             this.Children.Add(exitButton);
 

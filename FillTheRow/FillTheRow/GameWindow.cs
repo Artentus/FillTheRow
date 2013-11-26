@@ -1,24 +1,13 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
+using Artentus.GameUtils;
 
 namespace FillTheRow
 {
-    public class GameWindow : Form
+    public class GameWindow : GameWindowBase
     {
-        protected override CreateParams CreateParams
-        {
-            get
-            {
-                CreateParams param = base.CreateParams;
-                param.ClassStyle = param.ClassStyle | 0x200;
-                return param;
-            }
-        }
-
         public GameWindow(bool fullscreen)
         {
-            this.SetStyle(ControlStyles.UserPaint, true);
-            this.UpdateStyles();
             if (fullscreen)
             {
                 FormBorderStyle = FormBorderStyle.None;
@@ -31,11 +20,5 @@ namespace FillTheRow
             }
             Text = "Fill the Row";
         }
-
-        protected override void OnPaint(PaintEventArgs e)
-        { }
-
-        protected override void OnPaintBackground(PaintEventArgs e)
-        { }
     }
 }

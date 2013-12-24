@@ -1,6 +1,7 @@
 ﻿using System;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
+using GameUtils;
+using GameUtils.Graphics;
+using GameUtils.Math;
 
 namespace FillTheRow
 {

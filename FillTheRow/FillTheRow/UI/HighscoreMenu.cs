@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Artentus.GameUtils.Graphics;
+using GameUtils.Math;
 
 namespace FillTheRow.UI
 {
@@ -12,6 +12,7 @@ namespace FillTheRow.UI
             : base(parent)
         {
             var listBox = new ListBox();
+            Children.Add(listBox);
             listBox.Location = new Vector2(0.2f, 0.15f);
             listBox.Size = new Vector2(0.6f, 0.6f);
             listBox.ItemHeight = 0.06f;
@@ -31,9 +32,9 @@ namespace FillTheRow.UI
             }
             foreach (long score in scores.OrderByDescending(item => item))
                 listBox.Items.Add(score.ToString());
-            Children.Add(listBox);
 
             var backButton = new Button();
+            Children.Add(backButton);
             backButton.Location = new Vector2(0.2f, 0.8f);
             backButton.Size = new Vector2(0.6f, 0.055f);
             backButton.Text = "Zurück";
@@ -42,7 +43,6 @@ namespace FillTheRow.UI
                 this.GoUp();
                 Parent = null;
             };
-            Children.Add(backButton);
         }
     }
 }

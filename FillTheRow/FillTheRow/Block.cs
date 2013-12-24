@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Drawing;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
-using Rectangle = Artentus.GameUtils.Graphics.Rectangle;
+using GameUtils;
+using GameUtils.Graphics;
+using Rectangle = GameUtils.Math.Rectangle;
 
 namespace FillTheRow
 {
     public class Block : IRenderable
     {
-        readonly TetrominoManager manager;
+        //readonly TetrominoManager manager;
         readonly char identifier;
 
         bool IGameComponent.IsSynchronized
@@ -18,19 +18,16 @@ namespace FillTheRow
 
         public Point Location { get; set; }
 
-        public Block(TetrominoManager manager, char identifier, Point location)
+        public Block(char identifier, Point location)
         {
-            this.manager = manager;
+            //this.manager = manager;
             this.identifier = identifier;
             Location = location;
         }
 
-        void IRenderable.FactoryChanged(Factory factory)
-        { }
-
         void IRenderable.Render(Renderer renderer)
         {
-            Texture blockImage = manager.BlockImage(identifier);
+            Texture blockImage = GameEngine.QueryResource<Texture>(identifier + "_block"); //manager.BlockImage(identifier);
             renderer.DrawTexture(blockImage, new Rectangle(Location.X * 10, Location.Y * 10, 10, 10));
         }
 

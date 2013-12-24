@@ -1,5 +1,5 @@
-﻿using Artentus.GameUtils.Graphics;
-using Artentus.GameUtils.UI;
+﻿using GameUtils.Math;
+using GameUtils.UI;
 
 namespace FillTheRow.UI
 {

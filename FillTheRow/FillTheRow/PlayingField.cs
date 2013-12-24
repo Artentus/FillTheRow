@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Audio;
-using Artentus.GameUtils.Graphics;
-using Artentus.GameUtils.Input;
-using Artentus.GameUtils.Input.DefaultDevices;
-using HorizontalAlignment = Artentus.GameUtils.Graphics.HorizontalAlignment;
+using GameUtils;
+using GameUtils.Audio;
+using GameUtils.Graphics;
+using GameUtils.Input;
+using GameUtils.Input.DefaultDevices;
+using GameUtils.Math;
+using HorizontalAlignment = GameUtils.Graphics.HorizontalAlignment;
 using Point = System.Drawing.Point;
 
 namespace FillTheRow
@@ -27,13 +28,13 @@ namespace FillTheRow
         int comboCount;
         Tetromino currentTetromino;
         Tetromino holdTetromino;
-        SolidColorBrush gridBrush;
-        SolidColorBrush whiteBrush;
-        Font smallFont;
-        Font scoreFont;
-        Font levelFont;
-        TextFormat centerFormat;
-        Geometry frame;
+        readonly SolidColorBrush gridBrush;
+        readonly SolidColorBrush whiteBrush;
+        readonly Font smallFont;
+        readonly Font scoreFont;
+        readonly Font levelFont;
+        readonly TextFormat centerFormat;
+        readonly Geometry frame;
         int millisecondsPerTick = 1000;
         int elapsedMilliseconds;
         const int millisecondsPerMove = 20;
@@ -70,10 +71,10 @@ namespace FillTheRow
             get { return paused; }
         }
 
-        public PlayingField(TetrominoManager manager)
+        public PlayingField()
         {
-            this.manager = manager;
-            keyboardHandle = Game.Loop.Components.GetSingle<IInputProvider<KeyboardState>>().RegisterListener(this);
+            this.manager = GameEngine.QueryComponent<TetrominoManager>();
+            keyboardHandle = GameEngine.QueryComponent<IInputProvider<KeyboardState>>().RegisterListener(this);
             field = new Block[10, 20];
             generatedIds = new SortedSet<int>();
             nextTetrominos = new Queue<Tetromino>(5);
@@ -81,7 +82,7 @@ namespace FillTheRow
                 nextTetrominos.Enqueue(this.NextTetromino());
             holdTetromino = this.NextTetromino();
 
-            AudioEngine audioEngine = Game.Loop.Components.GetSingle<AudioEngine>();
+            AudioEngine audioEngine = GameEngine.QueryComponent<AudioEngine>();
             moveSound = audioEngine.CreateHandle(Path.Combine(Environment.CurrentDirectory, "Sounds/move.wav"));
             moveSound.Volume = 0.5f;
             rotateSound = audioEngine.CreateHandle(Path.Combine(Environment.CurrentDirectory, "Sounds/rotate.wav"));
@@ -91,6 +92,24 @@ namespace FillTheRow
 
             level = 1;
             canChange = true;
+
+            gridBrush = new SolidColorBrush(Color4.White);
+            gridBrush.Opacity = 0.7f;
+            whiteBrush = new SolidColorBrush(Color4.White);
+            smallFont = new Font("Consolas", 8, FontStyle.Normal, FontWeight.Bold);
+            scoreFont = new Font("Comic Sans MS", 14, FontStyle.Italic, FontWeight.Bold);
+            levelFont = new Font("Consolas", 20, FontStyle.Normal, FontWeight.Bold);
+            centerFormat = new TextFormat();
+            centerFormat.HorizontalAlignment = HorizontalAlignment.Center;
+            centerFormat.VerticalAlignment = VerticalAlignment.Center;
+            frame = new Geometry();
+            frame.BeginFigure(new Vector2(-5, -5), FigureBegin.Hollow);
+            frame.AddLines(new[] { new Vector2(-5, 205), new Vector2(105, 205), new Vector2(105, -5) });
+            frame.EndFigure(FigureEnd.Open);
+            frame.AddRectangle(new Rectangle(-35, 15, 30, 30));
+            frame.AddRectangle(new Rectangle(-35, 80, 30, 30));
+            frame.AddRectangle(new Rectangle(105, 15, 30, 30));
+            frame.Close();
         }
 
         public bool Fit(bool[,] map, Point location)
@@ -116,7 +135,7 @@ namespace FillTheRow
                 int id;
                 do
                 {
-                    id = Game.Loop.Components.GetSingle<XorshiftEngine>().Next(manager.Identifiers.Length);
+                    id = GameEngine.QueryComponent<XorshiftEngine>().Next(manager.Identifiers.Length);
                 } while (generatedIds.Contains(id));
                 generatedIds.Add(id);
                 return id;
@@ -138,71 +157,7 @@ namespace FillTheRow
 
         private Tetromino NextTetromino()
         {
-            return new Tetromino(this, manager, manager.Identifiers[this.NextId()]);
-        }
-
-        private void DestroyResources()
-        {
-            if (gridBrush != null)
-            {
-                gridBrush.Dispose();
-                gridBrush = null;
-            }
-            if (whiteBrush != null)
-            {
-                whiteBrush.Dispose();
-                whiteBrush = null;
-            }
-            if (smallFont != null)
-            {
-                smallFont.Dispose();
-                smallFont = null;
-            }
-            if (scoreFont != null)
-            {
-                scoreFont.Dispose();
-                scoreFont = null;
-            }
-            if (levelFont != null)
-            {
-                levelFont.Dispose();
-                levelFont = null;
-            }
-            if (centerFormat != null)
-            {
-                centerFormat.Dispose();
-                centerFormat = null;
-            }
-            if (frame != null)
-            {
-                frame.Dispose();
-                frame = null;
-            }
-        }
-
-        void IRenderable.FactoryChanged(Factory factory)
-        {
-            this.DestroyResources();
-
-            if (factory != null)
-            {
-                gridBrush = factory.CreateSolidColorBrush(new Color4(0.7f, 0.7f, 0.7f));
-                whiteBrush = factory.CreateSolidColorBrush(new Color4(1, 1, 1));
-                smallFont = factory.CreateFont("Consolas", 8, FontStyle.Normal, FontWeight.Bold);
-                scoreFont = factory.CreateFont("Comic Sans MS", 14, FontStyle.Italic, FontWeight.Bold);
-                levelFont = factory.CreateFont("Consolas", 20, FontStyle.Normal, FontWeight.Bold);
-                centerFormat = factory.CreateTextFormat();
-                centerFormat.HorizontalAlignment = HorizontalAlignment.Center;
-                centerFormat.VerticalAlignment = VerticalAlignment.Center;
-                frame = factory.CreateGeometry();
-                frame.BeginFigure(new Vector2(-5, -5), FigureBegin.Hollow);
-                frame.AddLines(new[] { new Vector2(-5, 205), new Vector2(105, 205), new Vector2(105, -5) });
-                frame.EndFigure(FigureEnd.Open);
-                frame.AddRectangle(new Rectangle(-35, 15, 30, 30));
-                frame.AddRectangle(new Rectangle(-35, 80, 30, 30));
-                frame.AddRectangle(new Rectangle(105, 15, 30, 30));
-                frame.Close();
-            }
+            return new Tetromino(this, manager.Identifiers[this.NextId()]);
         }
 
         private void DrawTextureCentered(Renderer renderer, Texture texture, Rectangle rect)
@@ -320,7 +275,7 @@ namespace FillTheRow
             if (currentTetromino == null)
             {
                 currentTetromino = nextTetrominos.Dequeue();
-                Game.Loop.Components.GetSingle<GameLayer>().Components.Add(currentTetromino);
+                GameEngine.QueryComponent<GameLoop>().Components.GetSingle<GameLayer>().Components.Add(currentTetromino);
                 nextTetrominos.Enqueue(this.NextTetromino());
                 canChange = true;
             }
@@ -332,6 +287,9 @@ namespace FillTheRow
 
         void IInputListener<KeyboardState>.OnInputReceived(KeyboardState state)
         {
+            if (currentTetromino == null)
+                return;
+
             if (state.IsPressed(Key.Left) || state.IsPressed(Key.A))
             {
                 if (!leftDown)
@@ -456,11 +414,12 @@ namespace FillTheRow
             {
                 canChange = false;
                 Tetromino temp = holdTetromino;
-                Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(currentTetromino);
+                GameLayer layer = GameEngine.QueryComponent<GameLoop>().Components.GetSingle<GameLayer>();
+                layer.Components.Remove(currentTetromino);
                 holdTetromino = currentTetromino;
                 currentTetromino = temp;
                 currentTetromino.GoBackToStart();
-                Game.Loop.Components.GetSingle<GameLayer>().Components.Add(currentTetromino);
+                layer.Components.Add(currentTetromino);
             }
         }
 
@@ -493,7 +452,7 @@ namespace FillTheRow
 
         private void PlaceCurrent()
         {
-            GameLayer layer = Game.Loop.Components.GetSingle<GameLayer>();
+            GameLayer layer = GameEngine.QueryComponent<GameLoop>().Components.GetSingle<GameLayer>();
             Block[] blocks = currentTetromino.ToBlocks();
             for (int i = 0; i < blocks.Length; i++)
             {
@@ -530,7 +489,7 @@ namespace FillTheRow
                 {
                     for (int x = 0; x < 10; x++)
                     {
-                        Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(field[x, y]);
+                        GameEngine.QueryComponent<GameLoop>().Components.GetSingle<GameLayer>().Components.Remove(field[x, y]);
                         field[x, y] = null;
                     }
                     count++;
@@ -578,13 +537,14 @@ namespace FillTheRow
 
         protected virtual void Dispose(bool disposing)
         {
-            if (currentTetromino != null) Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(currentTetromino);
+            GameLayer layer = GameEngine.QueryComponent<GameLoop>().Components.GetSingle<GameLayer>();
+            if (currentTetromino != null) layer.Components.Remove(currentTetromino);
             for (int x = 0; x < 10; x++)
             {
                 for (int y = 0; y < 20; y++)
                 {
                     if (field[x, y] != null)
-                        Game.Loop.Components.GetSingle<GameLayer>().Components.Remove(field[x, y]);
+                        layer.Components.Remove(field[x, y]);
                 }
             }
 
@@ -592,7 +552,13 @@ namespace FillTheRow
             moveSound.Dispose();
             rotateSound.Dispose();
             lockSound.Dispose();
-            this.DestroyResources();
+            gridBrush.Dispose();
+            whiteBrush.Dispose();
+            smallFont.Dispose();
+            scoreFont.Dispose();
+            levelFont.Dispose();
+            centerFormat.Dispose();
+            frame.Dispose();
         }
 
         ~PlayingField()

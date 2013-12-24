@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
-using Artentus.GameUtils.UI;
+using GameUtils.Graphics;
+using GameUtils.Math;
+using GameUtils.UI;
 
 namespace FillTheRow.UI
 {
     public class ListBox : ContainerElement
     {
         readonly VScrollBar scrollBar;
-        LinearGradientBrush gradientBrush;
-        SolidColorBrush textBrush;
-        Font font;
-        TextFormat format;
-        bool resized;
+        readonly LinearGradientBrush gradientBrush;
+        readonly SolidColorBrush textBrush;
+        readonly Font font;
+        readonly TextFormat format;
         float itemHeight;
 
         public ObservableCollection<string> Items { get; private set; }
@@ -24,7 +23,13 @@ namespace FillTheRow.UI
             set
             {
                 itemHeight = value;
-                resized = true;
+                if (Root != null)
+                {
+                    Rectangle rect = SurfaceBounds;
+                    gradientBrush.StartPoint = new Vector2(0, rect.Top);
+                    gradientBrush.EndPoint = new Vector2(0, rect.Bottom);
+                    font.Size = ItemHeight * rect.Height * 0.7f;
+                }
                 scrollBar.Maximum = Math.Max(Items.Count - 1 / itemHeight * 0.7f, 0);
             }
         }
@@ -38,74 +43,35 @@ namespace FillTheRow.UI
             scrollBar.Location = new Vector2(0.98f, 0.15f);
             scrollBar.Size = new Vector2(0.02f, 0.7f);
             Children.Add(scrollBar);
-        }
 
-        private void DestroyResources()
-        {
-            if (gradientBrush != null)
-            {
-                gradientBrush.Dispose();
-                gradientBrush = null;
-            }
-            if (textBrush != null)
-            {
-                textBrush.Dispose();
-                textBrush = null;
-            }
-            if (font != null)
-            {
-                font.Dispose();
-                font = null;
-            }
-            if (format != null)
-            {
-                format.Dispose();
-                format = null;
-            }
-        }
-
-        private void CreateResources(Factory factory)
-        {
             var stops = new GradientStop[3];
             stops[0] = new GradientStop(new Color4(0, 0, 0, 0), 0);
-            stops[1] = new GradientStop(new Color4(1, 1, 1), 0.5f);
+            stops[1] = new GradientStop(Color4.White, 0.5f);
             stops[2] = new GradientStop(new Color4(0, 0, 0, 0), 1);
             Rectangle rect = SurfaceBounds;
-            gradientBrush = factory.CreateLinearGradientBrush(stops, new Vector2(0, rect.Top), new Vector2(0, rect.Bottom));
-            textBrush = factory.CreateSolidColorBrush(new Color4(1, 1, 1));
-            font = factory.CreateFont("Segoe UI", ItemHeight * rect.Height * 0.7f);
-            format = factory.CreateTextFormat();
+            gradientBrush = new LinearGradientBrush(stops, new Vector2(0, rect.Top), new Vector2(0, rect.Bottom));
+            textBrush = new SolidColorBrush(Color4.White);
+            font = new Font("Segoe UI", 1);
+            format = new TextFormat();
             format.HorizontalAlignment = HorizontalAlignment.Leading;
             format.VerticalAlignment = VerticalAlignment.Center;
         }
 
-        protected override void OnFactoryChanged(FactoryChangedEventArgs e)
-        {
-            this.DestroyResources();
-            if (e.Factory != null)
-                this.CreateResources(e.Factory);
-
-            base.OnFactoryChanged(e);
-        }
-
         protected override void OnAbsoluteBoundsChanged(EventArgs e)
         {
-            resized = true;
+            if (Root == null)
+                return;
+
+            Rectangle rect = SurfaceBounds;
+            gradientBrush.StartPoint = new Vector2(0, rect.Top);
+            gradientBrush.EndPoint = new Vector2(0, rect.Bottom);
+            font.Size = ItemHeight * rect.Height * 0.7f;
 
             base.OnAbsoluteBoundsChanged(e);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (resized)
-            {
-                Rectangle rect = SurfaceBounds;
-                gradientBrush.StartPoint = new Vector2(0, rect.Top);
-                gradientBrush.EndPoint = new Vector2(0, rect.Bottom);
-                font.Size = ItemHeight * rect.Height * 0.7f;
-                resized = false;
-            }
-
             e.Renderer.DrawLine(new Vector2(e.Bounds.Left, e.Bounds.Top), new Vector2(e.Bounds.Left, e.Bounds.Bottom), gradientBrush, e.Bounds.Width / 170.0f);
             e.Renderer.DrawLine(new Vector2(e.Bounds.Left + e.Bounds.Width * 0.96f, e.Bounds.Top), new Vector2(e.Bounds.Left + e.Bounds.Width * 0.96f, e.Bounds.Bottom), gradientBrush, e.Bounds.Width / 170.0f);
 
@@ -123,7 +89,10 @@ namespace FillTheRow.UI
 
         protected override void Dispose(bool disposing)
         {
-            this.DestroyResources();
+            gradientBrush.Dispose();
+            textBrush.Dispose();
+            font.Dispose();
+            format.Dispose();
             
             base.Dispose(disposing);
         }

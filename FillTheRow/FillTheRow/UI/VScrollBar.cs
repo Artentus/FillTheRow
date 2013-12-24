@@ -1,20 +1,19 @@
 ﻿using System;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
-using Artentus.GameUtils.UI;
-using MouseEventArgs = Artentus.GameUtils.UI.MouseEventArgs;
+using GameUtils.Graphics;
+using GameUtils.Math;
+using GameUtils.UI;
+using MouseEventArgs = GameUtils.UI.MouseEventArgs;
 
 namespace FillTheRow.UI
 {
     public class VScrollBar : UIElement
     {
-        LinearGradientBrush brush;
+        readonly LinearGradientBrush brush;
         float maximum;
         float value;
         float sliderLocation;
         float relativeMousePos;
         bool mouseDown;
-        bool resized;
 
         public float Maximum
         {
@@ -47,31 +46,25 @@ namespace FillTheRow.UI
             get { return AbsoluteSize.Y * 0.7f; }
         }
 
-        protected override void OnFactoryChanged(FactoryChangedEventArgs e)
+        public VScrollBar()
         {
-            if (brush != null)
-            {
-                brush.Dispose();
-                brush = null;
-            }
-
-            if (e.Factory != null)
-            {
-                var stops = new GradientStop[4];
-                stops[0] = new GradientStop(new Color4(0.1f, 1, 1, 1), 0);
-                stops[1] = new GradientStop(new Color4(0.8f, 1, 1, 1), 0.45f);
-                stops[2] = new GradientStop(new Color4(0.8f, 1, 1, 1), 0.55f);
-                stops[3] = new GradientStop(new Color4(0.1f, 1, 1, 1), 1);
-                Rectangle rect = SurfaceBounds;
-                brush = e.Factory.CreateLinearGradientBrush(stops, new Vector2(0, rect.Y + sliderLocation), new Vector2(0, rect.Y + rect.Height * 0.3f + sliderLocation));
-            }
-
-            base.OnFactoryChanged(e);
+            var stops = new GradientStop[4];
+            stops[0] = new GradientStop(new Color4(0.1f, 1, 1, 1), 0);
+            stops[1] = new GradientStop(new Color4(0.8f, 1, 1, 1), 0.45f);
+            stops[2] = new GradientStop(new Color4(0.8f, 1, 1, 1), 0.55f);
+            stops[3] = new GradientStop(new Color4(0.1f, 1, 1, 1), 1);
+            Rectangle rect = SurfaceBounds;
+            brush = new LinearGradientBrush(stops, new Vector2(0, rect.Y + sliderLocation), new Vector2(0, rect.Y + rect.Height * 0.3f + sliderLocation));
         }
 
         protected override void OnAbsoluteBoundsChanged(EventArgs e)
         {
-            resized = true;
+            if (Root == null)
+                return;
+
+            Rectangle rect = SurfaceBounds;
+            brush.StartPoint = new Vector2(0, rect.Y + sliderLocation);
+            brush.EndPoint = new Vector2(0, rect.Y + rect.Height * 0.3f + sliderLocation);
 
             base.OnAbsoluteBoundsChanged(e);
         }
@@ -98,7 +91,9 @@ namespace FillTheRow.UI
                 sliderLocation = MathHelper.Clamp(e.Y * AbsoluteSize.Y - relativeMousePos, 0, MaxSliderLocation);
                 value = sliderLocation / MaxSliderLocation * maximum;
 
-                resized = true;
+                Rectangle rect = SurfaceBounds;
+                brush.StartPoint = new Vector2(0, rect.Y + sliderLocation);
+                brush.EndPoint = new Vector2(0, rect.Y + rect.Height * 0.3f + sliderLocation);
             }
 
             base.OnMouseMove(e);
@@ -106,15 +101,6 @@ namespace FillTheRow.UI
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (resized)
-            {
-                Rectangle rect = SurfaceBounds;
-                brush.StartPoint = new Vector2(0, rect.Y + sliderLocation);
-                brush.EndPoint = new Vector2(0, rect.Y + rect.Height * 0.3f + sliderLocation);
-
-                resized = false;
-            }
-
             e.Renderer.FillRectangle(new Rectangle(e.Bounds.X, e.Bounds.Y + sliderLocation, e.Bounds.Width, e.Bounds.Height * 0.3f), brush);
 
             base.OnPaint(e);
@@ -122,7 +108,7 @@ namespace FillTheRow.UI
 
         protected override void Dispose(bool disposing)
         {
-            if (brush != null) brush.Dispose();
+            brush.Dispose();
 
             base.Dispose(disposing);
         }

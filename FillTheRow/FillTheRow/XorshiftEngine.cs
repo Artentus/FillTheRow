@@ -1,15 +1,20 @@
 ﻿using System;
-using Artentus.GameUtils;
+using GameUtils;
 
 namespace FillTheRow
 {
-    public class XorshiftEngine : Random, IGameComponent
+    public class XorshiftEngine : Random, IEngineComponent
     {
         uint x, y, z, w;
 
-        bool IGameComponent.IsSynchronized
+        bool IEngineComponent.IsCompatibleTo(IEngineComponent component)
         {
-            get { return false; }
+            return !(component is Random);
+        }
+
+        object IEngineComponent.Tag
+        {
+            get { return null; }
         }
 
         public XorshiftEngine()
@@ -19,10 +24,10 @@ namespace FillTheRow
         public XorshiftEngine(int seed)
         {
             var rnd = new Random(seed);
-            x = (uint)rnd.Next(1, int.MaxValue);
-            y = (uint)rnd.Next(1, int.MaxValue);
-            z = (uint)rnd.Next(1, int.MaxValue);
-            w = (uint)rnd.Next(1, int.MaxValue);
+            x = (uint)rnd.Next() + 1;
+            y = (uint)rnd.Next() + 1;
+            z = (uint)rnd.Next() + 1;
+            w = (uint)rnd.Next() + 1;
             for (int i = 0; i < 10; i++)
                 this.NextUInt();
         }
@@ -39,8 +44,5 @@ namespace FillTheRow
         {
             return (double)this.NextUInt() / (double)uint.MaxValue;
         }
-
-        void IDisposable.Dispose()
-        { }
     }
 }

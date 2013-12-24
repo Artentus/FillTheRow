@@ -1,17 +1,14 @@
 ﻿using System;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
-using Artentus.GameUtils.UI;
+using GameUtils.Graphics;
+using GameUtils.UI;
 
 namespace FillTheRow.UI
 {
     public class MenuButton : UIElement
     {
-        SolidColorBrush solidBrush;
-        Font font;
-        TextFormat format;
-        Factory factory;
-        bool resized;
+        readonly SolidColorBrush solidBrush;
+        readonly Font font;
+        readonly TextFormat format;
 
         public string Text { get; set; }
 
@@ -19,63 +16,26 @@ namespace FillTheRow.UI
         {
             Text = string.Empty;
             CanGetFocus = false;
-        }
 
-        private void DestroyResources()
-        {
-            if (solidBrush != null)
-            {
-                solidBrush.Dispose();
-                solidBrush = null;
-            }
-            if (font != null)
-            {
-                font.Dispose();
-                font = null;
-            }
-            if (format != null)
-            {
-                format.Dispose();
-                format = null;
-            }
-        }
-
-        private void CreateResources(Factory factory)
-        {
-            solidBrush = factory.CreateSolidColorBrush(new Color4(1, 1, 1));
-            font = factory.CreateFont("Segoe UI", AbsoluteBounds.Height * 0.6f);
-            format = factory.CreateTextFormat();
+            solidBrush = new SolidColorBrush(Color4.White);
+            font = new Font("Segoe UI", 1);
+            format = new TextFormat();
             format.HorizontalAlignment = HorizontalAlignment.Center;
             format.VerticalAlignment = VerticalAlignment.Center;
         }
 
-        protected override void OnFactoryChanged(FactoryChangedEventArgs e)
-        {
-            factory = e.Factory;
-
-            this.DestroyResources();
-            if (e.Factory != null)
-                this.CreateResources(e.Factory);
-
-            base.OnFactoryChanged(e);
-        }
-
         protected override void OnAbsoluteBoundsChanged(EventArgs e)
         {
-            resized = true;
+            if (Root == null)
+                return;
+
+            font.Size = AbsoluteBounds.Height * 0.6f;
 
             base.OnAbsoluteBoundsChanged(e);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (resized)
-            {
-                this.DestroyResources();
-                this.CreateResources(factory);
-                resized = false;
-            }
-
             e.Renderer.DrawRectangle(e.Bounds, solidBrush, e.Bounds.Height / 20.0f);
             e.Renderer.DrawText(Text, font, solidBrush, e.Bounds, format);
 
@@ -84,7 +44,9 @@ namespace FillTheRow.UI
 
         protected override void Dispose(bool disposing)
         {
-            this.DestroyResources();
+            solidBrush.Dispose();
+            font.Dispose();
+            format.Dispose();
 
             base.Dispose(disposing);
         }

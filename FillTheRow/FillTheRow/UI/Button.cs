@@ -1,18 +1,17 @@
 ﻿using System;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
-using Artentus.GameUtils.UI;
+using GameUtils.Graphics;
+using GameUtils.Math;
+using GameUtils.UI;
 
 namespace FillTheRow.UI
 {
     public class Button : UIElement
     {
-        LinearGradientBrush gradientBrush;
-        SolidColorBrush solidBrush;
-        Font font;
-        TextFormat format;
+        readonly LinearGradientBrush gradientBrush;
+        readonly SolidColorBrush solidBrush;
+        readonly Font font;
+        readonly TextFormat format;
         bool mouseOver;
-        bool resized;
 
         public string Text { get; set; }
 
@@ -20,74 +19,34 @@ namespace FillTheRow.UI
         {
             Text = string.Empty;
             CanGetFocus = false;
-        }
 
-        private void DestroyResources()
-        {
-            if (gradientBrush != null)
-            {
-                gradientBrush.Dispose();
-                gradientBrush = null;
-            }
-            if (solidBrush != null)
-            {
-                solidBrush.Dispose();
-                solidBrush = null;
-            }
-            if (font != null)
-            {
-                font.Dispose();
-                font = null;
-            }
-            if (format != null)
-            {
-                format.Dispose();
-                format = null;
-            }
-        }
-
-        private void CreateResources(Factory factory)
-        {
             var stops = new GradientStop[3];
             stops[0] = new GradientStop(new Color4(0, 0, 0, 0), 0);
-            stops[1] = new GradientStop(new Color4(1, 1, 1), 0.5f);
+            stops[1] = new GradientStop(Color4.White, 0.5f);
             stops[2] = new GradientStop(new Color4(0, 0, 0, 0), 1);
-            Rectangle rect = SurfaceBounds;
-            gradientBrush = factory.CreateLinearGradientBrush(stops, new Vector2(rect.Left, 0), new Vector2(rect.Right, 0));
-            solidBrush = factory.CreateSolidColorBrush(new Color4(1, 1, 1));
-            font = factory.CreateFont("Segoe UI", rect.Height * 0.6f);
-            format = factory.CreateTextFormat();
+            gradientBrush = new LinearGradientBrush(stops, new Vector2(0, 0), new Vector2(1, 0));
+            solidBrush = new SolidColorBrush(Color4.White);
+            font = new Font("Segoe UI", 1);
+            format = new TextFormat();
             format.HorizontalAlignment = HorizontalAlignment.Center;
             format.VerticalAlignment = VerticalAlignment.Center;
         }
 
-        protected override void OnFactoryChanged(FactoryChangedEventArgs e)
-        {
-            this.DestroyResources();
-            if (e.Factory != null)
-                this.CreateResources(e.Factory);
-
-            base.OnFactoryChanged(e);
-        }
-
         protected override void OnAbsoluteBoundsChanged(EventArgs e)
         {
-            resized = true;
+            if (Root == null)
+                return;
+
+            Rectangle rect = SurfaceBounds;
+            gradientBrush.StartPoint = new Vector2(rect.Left, 0);
+            gradientBrush.EndPoint = new Vector2(rect.Right, 0);
+            font.Size = rect.Height * 0.6f;
 
             base.OnAbsoluteBoundsChanged(e);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (resized)
-            {
-                Rectangle rect = SurfaceBounds;
-                gradientBrush.StartPoint = new Vector2(rect.Left, 0);
-                gradientBrush.EndPoint = new Vector2(rect.Right, 0);
-                font.Size = rect.Height * 0.6f;
-                resized = false;
-            }
-
             if (mouseOver)
             {
                 e.Renderer.DrawLine(new Vector2(e.Bounds.Left, e.Bounds.Top), new Vector2(e.Bounds.Right, e.Bounds.Top), gradientBrush, e.Bounds.Height / 15.0f);
@@ -114,7 +73,10 @@ namespace FillTheRow.UI
 
         protected override void Dispose(bool disposing)
         {
-            this.DestroyResources();
+            gradientBrush.Dispose();
+            solidBrush.Dispose();
+            font.Dispose();
+            format.Dispose();
 
             base.Dispose(disposing);
         }

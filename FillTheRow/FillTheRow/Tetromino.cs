@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using Artentus.GameUtils;
-using Artentus.GameUtils.Graphics;
+using GameUtils;
+using GameUtils.Graphics;
+using GameUtils.Math;
 using Point = System.Drawing.Point;
 
 namespace FillTheRow
 {
     public class Tetromino : IRenderable
     {
-        readonly TetrominoManager manager;
+        //readonly TetrominoManager manager;
         readonly PlayingField field;
         readonly char identifier;
         bool[,] blockMap;
         Point center;
         readonly bool rotatesCenter;
-        SolidColorBrush ghostBrush;
+        readonly SolidColorBrush ghostBrush;
 
         bool IGameComponent.IsSynchronized
         {
@@ -23,18 +24,18 @@ namespace FillTheRow
 
         public Texture Image
         {
-            get { return manager.Image(identifier); }
+            get { return GameEngine.QueryResource<Texture>(identifier + "_image"); } //manager.Image(identifier); }
         }
 
         public Point Location { get; private set; }
 
-        public Tetromino(PlayingField field, TetrominoManager manager, char identifier)
+        public Tetromino(PlayingField field, char identifier)
         {
             this.field = field;
-            this.manager = manager;
+            //this.manager = manager;
             this.identifier = identifier;
 
-            byte[] data = manager.Data(identifier);
+            byte[] data = GameEngine.QueryResource<TetrominoData>(identifier + "_data").Data; //manager.Data(identifier);
             blockMap = new bool[4, 4];
             for (int i = 0; i < 4; i++)
             {
@@ -47,6 +48,9 @@ namespace FillTheRow
             rotatesCenter = (data[2] & 0xF0) == 0;
 
             Location = new Point(4, -2);
+
+            ghostBrush = new SolidColorBrush(Color4.White);
+            ghostBrush.Opacity = 0.4f;
         }
 
         public void GoBackToStart()
@@ -62,7 +66,7 @@ namespace FillTheRow
                 for (int y = 0; y < 4; y++)
                 {
                     if (blockMap[x, y])
-                        result.Add(new Block(manager, identifier, new Point(Location.X - center.X + x, Location.Y - center.Y + y)));
+                        result.Add(new Block(identifier, new Point(Location.X - center.X + x, Location.Y - center.Y + y)));
                 }
             }
             return result.ToArray();
@@ -159,21 +163,6 @@ namespace FillTheRow
             return false;
         }
 
-        void IRenderable.FactoryChanged(Factory factory)
-        {
-            if (ghostBrush != null)
-            {
-                ghostBrush.Dispose();
-                ghostBrush = null;
-            }
-
-            if (factory != null)
-            {
-                ghostBrush = factory.CreateSolidColorBrush(new Color4(1, 1, 1));
-                ghostBrush.Opacity = 0.4f;
-            }
-        }
-
         void IRenderable.Render(Renderer renderer)
         {
             int counter = Location.Y;
@@ -189,7 +178,7 @@ namespace FillTheRow
                 }
             }
 
-            Texture blockImage = manager.BlockImage(identifier);
+            Texture blockImage = GameEngine.QueryResource<Texture>(identifier + "_block"); //manager.BlockImage(identifier);
             for (int x = 0; x < 4; x++)
             {
                 for (int y = 0; y < 4; y++)
